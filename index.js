@@ -4,7 +4,6 @@ const {
     MessageButton,MessageSelectMenu
 } = Discord;
 const {Client,Intents} = Discord;
-requrie('dotenv').congif();
 const {Token,channelId} = process.env;
 const wait = require('util').promisify(setTimeout);
 const mongoose = require('mongoose');
