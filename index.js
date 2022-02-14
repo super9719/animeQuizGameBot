@@ -4,7 +4,7 @@ const {
     MessageButton,MessageSelectMenu
 } = Discord;
 const {Client,Intents} = Discord;
-const {Token,channelId} = process.env;
+const {Token,channelId} = env;
 const wait = require('util').promisify(setTimeout);
 const mongoose = require('mongoose');
 const GamingObjectModel = require('./models/gamingObject');
