@@ -266,7 +266,7 @@ client.on('interactionCreate', async interaction =>{
                         userName:interaction.user.username,
                         gestUserName:targetUser.user.username,
                         hostId:interaction.user.id,
-                        gestId:targetUser.id
+                        gestId:targetUser.user.id
                     }).save();
 
                     //send reply
@@ -1237,15 +1237,15 @@ client.on('messageCreate', async msg=>{
                         if(sendingStage === 3){
 
                             let winner = (function(){
-                                const {hostScore,gestScore,hostId,gestId} = multiGamingObject;
-                                if(Number(hostScore) > Number(gestScore)) return hostId
-                                else return gestId
+                                const {hostScore,gestScore,gestUserName,userName} = multiGamingObject;
+                                if(Number(hostScore) > Number(gestScore)) return userName
+                                else return gestUserName
                             })()
                             //he finishs the game
                             gameMessage.edit({
                                 embeds:[
                                     new MessageEmbed().setColor('AQUA')
-                                    .setTitle(`The winner is <@${winner}>`)
+                                    .setTitle(`The winner is #${winner}`)
                                     .setFields([
                                         {
                                             name: multiGamingObject.userName,
