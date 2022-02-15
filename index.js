@@ -1135,8 +1135,8 @@ client.on('messageCreate', async msg=>{
 
                         }else if(sendingStage === 2){
                             console.log('before allowed')
-                            console.log(!answered,!multiGamingObject.answered)
-                            if(!answered && !multiGamingObject.answered && multiGamingObject.gestAllowed){
+                            console.log(answered,multiGamingObject.answered,multiGamingObject.gestAllowed)
+                            if(!answered && multiGamingObject.gestAllowed){
                                 console.log('allowed')
                                 //update key variables
                                 sendingStage += 1;
