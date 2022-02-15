@@ -647,7 +647,7 @@ client.on('interactionCreate', async interaction =>{
                 intReply = res;
                 console.log('response',res)
             });*/
-
+            await intercation.deferReply();
             gameMessage.edit({
                 embeds:[
                     new MessageEmbed().setColor('AQUA')
@@ -946,8 +946,7 @@ client.on('messageCreate', async msg=>{
                     
                         //display wrong message
                         let replyMsg = await msg.reply(
-                            `Wrong answer :pensive: \n
-                            game will start automaticaly after 5 Sec`
+                            `Wrong answer :pensive:, game will start automaticaly`
                         );
 
                         //update gaming object 
@@ -994,7 +993,7 @@ client.on('messageCreate', async msg=>{
                             gamingObject.isWritable = true;
                             gamingObject = await gamingObject.save();
 
-                            await wait(3000);
+                            await wait(1000);
 
                             //delete the user sended response message
                             await msg.delete();
