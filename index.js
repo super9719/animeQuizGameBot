@@ -1243,6 +1243,7 @@ client.on('messageCreate', async msg=>{
                                 if(Number(hostScore) > Number(gestScore)) return userName
                                 else return gestUserName
                             })()
+                            await wait(2000);
                             //he finishs the game
                             gameMessage.edit({
                                 embeds:[
