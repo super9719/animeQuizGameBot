@@ -1066,7 +1066,7 @@ client.on('messageCreate', async msg=>{
 
                         }else if(sendingStage === 2){
                             
-                            if(answered === false && multiGamingObject.answered === false && hostAllowed){
+                            if(!answered && !multiGamingObject.answered && hostAllowed){
                                 
                                 //update key variables
                                 sendingStage += 1;
@@ -1075,9 +1075,7 @@ client.on('messageCreate', async msg=>{
                                 multiGamingObject.hostAllowed = false;
 
                                 if(msg.content.toLowerCase() === correctAnswer){
-                                    //update key variables
-                                    sendingStage += 1;
-        
+                                    
                                     //send success message
                                     await msg.channel.send(`Correct answer by ${msg.author.username} :smiley:`);
         
