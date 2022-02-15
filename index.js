@@ -645,6 +645,7 @@ client.on('interactionCreate', async interaction =>{
                 fetchReply:true
             }).then(res => {
                 intReply = res;
+                console.log('response',res)
             });
 
             gameMessage.edit({
