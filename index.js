@@ -693,7 +693,14 @@ client.on('interactionCreate', async interaction =>{
                 content:'Game closing...',
                 components:[]
             });
-
+    
+            //update key variables
+            isWritebale = false;
+            sendingStage = 1;
+            hostAllowed = true;
+            gestAllowed = true;
+            answered = false;
+            
             //delete the gaming object
             await GamingObjectModel.findOneAndDelete(
                 {
