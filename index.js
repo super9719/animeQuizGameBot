@@ -647,8 +647,7 @@ client.on('interactionCreate', async interaction =>{
                 intReply = res;
                 console.log('response',res)
             });*/
-            await interaction.deferReply();
-            await interaction.editReply();
+            
             gameMessage.edit({
                 embeds:[
                     new MessageEmbed().setColor('AQUA')
