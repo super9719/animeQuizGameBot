@@ -1175,6 +1175,8 @@ client.on('messageCreate', async msg=>{
 
                             sendingStage += 1 //to prevent leaked access
                             console.log('update game message')
+                            
+                            await wait(1000) // stop for a moment so users can see replies
                             //there is still images to quiz the user for
                             gameMessage.edit({
                                 embeds:[
