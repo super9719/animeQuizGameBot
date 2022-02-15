@@ -639,14 +639,14 @@ client.on('interactionCreate', async interaction =>{
             gameImages = arrayMixer(gameImages);
 
             //update game message
-            let intReply;
+            /*let intReply;
             interaction.reply({
                 content:'Game is loading...',
                 fetchReply:true
             }).then(res => {
                 intReply = res;
                 console.log('response',res)
-            });
+            });*/
 
             gameMessage.edit({
                 embeds:[
@@ -679,7 +679,7 @@ client.on('interactionCreate', async interaction =>{
                 components:[]
             }).then(async ()=> {
                 //delete reply
-                intReply ? await intReply.delete():null;
+                //intReply ? await intReply.delete():null;
 
                 //allow user to send a message 'his answer'
                 isWritebale = true
@@ -1277,16 +1277,20 @@ client.on('messageCreate', async msg=>{
                                 await msg.channel.bulkDelete(fetchedMessages);
                                 
                                 //update key variables and multigamingObject
-                                setTimeout(async function(){
-                                    sendingStage = 1;
-                                    isWritebale = false;
-                                    hostAllowed = true;
-                                    gestAllowed = true;
-                                    multiGamingObject.isWritable = false;
-                                    multiGamingObject.hostAllowed = true;
-                                    multiGamingObject.gestAllowed = true;
-                                    multiGamingObject = await multiGamingObject.save();
-                                },1000);
+                                
+                                sendingStage = 1;
+                                isWritebale = false;
+                                hostAllowed = true;
+                                gestAllowed = true;
+                                multiGamingObject.isWritable = false;
+                                multiGamingObject.hostAllowed = true;
+                                multiGamingObject.gestAllowed = true;
+                                multiGamingObject.answered = false;
+                                multiGamingObject.hostScore = '0';
+                                multiGamingObject.gestScore = '0';
+                                multiGamingObject.stage = '0';
+                                multiGamingObject = await multiGamingObject.save();
+                                
                             })
                         }
                     }
