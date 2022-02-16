@@ -32,16 +32,23 @@ mongoose.connect(
 }).catch(err => console.log(err))
 
 
-//decalre needed variables
+//decalre needed variables ////////////////////////////////////////////////////
 let id,//id for the game section channel
-lastInteraction,
-isWritebale = true,
-sendingStage=1,
-timer = 1,
-timerInterval,
-answered = false,
-hostAllowed = true,
-gestAllowed = true;
+lastInteraction;
+
+//create a class to be used in create global key variables for each multiplaying room
+let globalGamingRooms = {};
+class CreateRoom {
+    constructor(){
+        this.isWritebale = true,
+        this.sendingStage=1,
+        this.timer = 1,
+        this.timerInterval,
+        this.answered = false,
+        this.hostAllowed = true,
+        this.gestAllowed = true
+    }
+}
 
 
 
@@ -269,6 +276,9 @@ client.on('interactionCreate', async interaction =>{
                         gestId:targetUser.user.id
                     }).save();
 
+                    //create globalgaming room
+                    globalGamingRooms[channel.id] = new CreateRoom();
+                    
                     //send reply
                     interaction.editReply({
                         content:'please join you multiplayer game section',
@@ -521,6 +531,12 @@ client.on('interactionCreate', async interaction =>{
 
 
         }else if(interaction.component.customId === 'multiplaystart'){/////////////////////////////
+            
+            //get key variables for this channel
+            let {
+            sendingStage,isWritebale,timer,timerInterval,
+            gestAllowed,hostAllowed,answered
+            } = globalGamingRooms[interaction.channel.id];
 
             //disabled button after click and store the interaction id for later use 
             await interaction.update({
@@ -606,19 +622,26 @@ client.on('interactionCreate', async interaction =>{
 
                     //store the id of the embed game message
                     multiGamingObject.gameMessageId = follow.id;
-                })
+                    
+                    //start the timer
+                    startTimer(timer,timerInterval,sendingStage,interaction,isWritebale);
 
-                //start the timer
-                //startTimer('interaction',interaction,multiGamingObject,gameMessage);
+                    //allow handling sended messages
+                    multiGamingObject.isWritable = true;
+                })
                 
-                //allow handling sended messages
-                multiGamingObject.isWritable = true;
                 multiGamingObject = await multiGamingObject.save();
             
             }
 
 
         }else if(interaction.component.customId === 'multiplayagain'){/////////////////////////////
+            
+            //get the key variables
+            let {
+            sendingStage,isWritebale,timer,timerInterval,
+            gestAllowed,hostAllowed,answered
+            } = globalGamingRooms[interaction.channel.id];
 
             //get the gaming object for this user
             let multiGamingObject = await MultiPlayerModel.findOne(
@@ -685,6 +708,9 @@ client.on('interactionCreate', async interaction =>{
                 isWritebale = true
                 multiGamingObject.isWritable = true;
                 multiGamingObject = await multiGamingObject.save();
+                
+                //start timer
+                startTimer(timer,timerInterval,sendingStage,interaction,isWritebale)
             })
 
 
@@ -701,13 +727,6 @@ client.on('interactionCreate', async interaction =>{
             hostAllowed = true;
             gestAllowed = true;
             answered = false;
-            
-            //delete the gaming object
-            await GamingObjectModel.findOneAndDelete(
-                {
-                    userId:interaction.channel.id
-                }
-            );
 
             //delete the channel
             await interaction.channel.delete();
@@ -780,7 +799,10 @@ client.on('interactionCreate', async interaction =>{
                 hostId:interaction.user.id,
                 gestId:targetUser.id
             }).save();
-
+            
+            //create globalgaming room
+            globalGamingRooms[channel.id] = new CreateRoom();
+            
             //send reply
             interaction.editReply({
                 content:'please join you multiplayer game section',
@@ -1014,6 +1036,11 @@ client.on('messageCreate', async msg=>{
 
                 //handling multi playing section messages /////////////////////
                 
+                //get the key variables for this channel
+                let {
+                    sendingStage,isWritebale,gestAllowed,hostAllowed,answered
+                } = globalGamingRooms[msg.channel.id];
+                
                 //get the multi playing game object
                 let multiGamingObject = await MultiPlayerModel.findOne({
                     channelId: msg.channel.id
@@ -1166,75 +1193,80 @@ client.on('messageCreate', async msg=>{
                             }else console.log('not allowed')
                         }else if(sendingStage === 3) msg ? await msg.delete() :null;
                     }
+    if(msg.channel.parent !== null){
+        //get key variables for this channel
+        let {
+            sendingStage,isWritebale,timer,timerInterval,
+            gestAllowed,hostAllowed,answered
+        } = globalGamingRooms[msg.channel.id];
+        
+        //update game message
+        if(Number(multiGamingObject.stage) <= gameImages.length -1){
 
-                    //update game message
-                    if(Number(multiGamingObject.stage) <= gameImages.length -1){
-
-                        if(sendingStage === 3){
-
-                            sendingStage += 1 //to prevent leaked access
-                            console.log('update game message')
+            if(sendingStage === 3){
+                
+                sendingStage += 1 //to prevent leaked access
+                console.log('update game message')
                             
-                            await wait(2000) // stop for a moment so users can see replies
-                            //there is still images to quiz the user for
-                            gameMessage.edit({
-                                embeds:[
-                                    new MessageEmbed().setColor('AQUA')
-                                    .setTitle('Quiz Anime Game')
-                                    .setFields([
-                                        {
-                                            name: multiGamingObject.userName,
-                                            value:'your score is: ' + multiGamingObject.hostScore,
-                                            inline:true
-                                        },
-                                        {
-                                            name: multiGamingObject.gestUserName,
-                                            value: 'your score is: ' + multiGamingObject.gestScore,
-                                            inline:true
-                                        }
-                                    ])
-                                    .setImage('attachment://' +
-                                        gameImages[Number(multiGamingObject.stage)].name
-                                    )
-                                    .setFooter({
-                                        text:'who is this anime character? tell us in a message.'
-                                    })
-                                ],
-                                files:[
-                                    new MessageAttachment(
-                                    gameImages[Number(multiGamingObject.stage)].name
-                                    )
-                                ]
-                            }).then(async ()=>{
+                await wait(2000) // stop for a moment so users can see replies
+                //there is still images to quiz the user for
+                gameMessage.edit({
+                    embeds:[
+                        new MessageEmbed().setColor('AQUA')
+                        .setTitle('Quiz Anime Game')
+                        .setFields(
+                            {
+                                name: multiGamingObject.userName,
+                                value:'your score is: ' + multiGamingObject.hostScore,
+                                inline:true
+                            },
+                            {
+                                name: multiGamingObject.gestUserName,
+                                value: 'your score is: ' + multiGamingObject.gestScore,
+                                inline:true
+                            }
+                        ])
+                        .setImage('attachment://' +
+                            gameImages[Number(multiGamingObject.stage)].name
+                        )
+                         .setFooter({
+                            text:'who is this anime character? tell us in a message.'
+                        })
+                        ],
+                        files:[
+                            new MessageAttachment(
+                            gameImages[Number(multiGamingObject.stage)].name
+                            )
+                        ]
+                }).then(async ()=>{
 
-                                //delete all messages except handler and game message
-                                const {gameMessageId, handlingMessageId} = multiGamingObject;
-                                const fetchedMessages = (await msg.channel.messages.fetch()).filter(elem => {
-                                    if(elem.id != gameMessageId && elem.id != handlingMessageId) return true
-                                });
+                    //delete all messages except handler and game message
+                    const {gameMessageId, handlingMessageId} = multiGamingObject;
+                    const fetchedMessages = (await msg.channel.messages.fetch()).filter(elem => {
+                        if(elem.id != gameMessageId && elem.id != handlingMessageId) return true
+                    });
                             
-                                await msg.channel.bulkDelete(fetchedMessages);
+                    await msg.channel.bulkDelete(fetchedMessages);
                                 
-                                //update key variables and multigamingObject
-                                setTimeout(async ()=>{
-                                    answered = false;
-                                    sendingStage = 1;
-                                    isWritebale = true;
-                                    hostAllowed = true;
-                                    gestAllowed = true;
-                                    multiGamingObject.isWritable = true;
-                                    multiGamingObject.hostAllowed = true;
-                                    multiGamingObject.gestAllowed = true;
-                                    multiGamingObject = await multiGamingObject.save();
-                                },1000);
+                    //update key variables and multigamingObject
+                    setTimeout(async ()=>{
+                        answered = false;
+                        sendingStage = 1;
+                        isWritebale = true;
+                        hostAllowed = true;
+                        gestAllowed = true;
+                        multiGamingObject.isWritable = true;
+                        multiGamingObject.hostAllowed = true;
+                        multiGamingObject.gestAllowed = true;
+                        multiGamingObject = await multiGamingObject.save();
+                    },1000);
 
-                                //start the timer
-                                //startTimer('message',msg,multiGamingObject,gameMessage);
-
-                            })
-                        }
-
-                    }else{
+                    //start the timer
+                    startTimer(timer,timerInterval,sendingStage,msg,isWritebale);
+                })
+            }
+        
+        }else{
 
                         if(sendingStage === 3){
 
@@ -1295,7 +1327,12 @@ client.on('messageCreate', async msg=>{
                                 
                             })
                         }
-                    }
+                    }        
+    
+    
+    
+    }                    
+                    
 
 
                 }else{
@@ -1320,6 +1357,7 @@ client.on('channelDelete', async deletedChannel => {
         await MultiPlayerModel.findOneAndDelete({
             userChannelId:deletedChannel.id
         });
+        delete globalGamingRooms[deletedChannel.id]
     };
     
 });
@@ -1399,101 +1437,6 @@ const disabledmultiPlayAgainButton = new MessageActionRow().addComponents(
 /****************************************************global actionss *****************/
 
 
-//listen to time over event
-/*eventEmitter.on('timeOver', async param=> {
-    const [type, obj, multiGamingObject, gameMessage] = param;
-
-    if(type === 'interaction'){
-        //send fail message
-        await obj.channel.send('Times over ::');
-
-        //update multi playing object
-        multiGamingObject.stage = Number(multiGamingObject.stage) + 1; 
-
-        //update the game embed
-        gameMessage.edit({
-            embeds:[
-                new MessageEmbed().setColor('AQUA')
-                .setTitle('Quiz Anime Game')
-                .setFields([
-                    {
-                        name: multiGamingObject.userName,
-                        value:'your score is: ' + multiGamingObject.hostScore,
-                        inline:true
-                    },
-                    {
-                        name: multiGamingObject.gestUserName,
-                        value: 'your score is: ' + multiGamingObject.gestScore,
-                        inline:true
-                    }
-                ])
-                .setImage('attachment://' +
-                    gameImages[Number(multiGamingObject.stage)].name
-                )
-                .setFooter({
-                    text:'who is this anime character? tell us in a message.'
-                })
-            ],
-            files:[
-                new MessageAttachment(
-                    gameImages[Number(multiGamingObject.stage)].name
-                )
-            ]
-        }).then(res => {
-            startTimer(type, obj, multiGamingObject, gameMessage);
-        })
-
-    }else if(type === 'message'){
-        //send fail message
-        await obj.channel.send('Times over ::');
-
-        //update multi playing object
-        multiGamingObject.stage = Number(multiGamingObject.stage) + 1; 
-
-        //update the game embed
-        gameMessage.edit({
-            embeds:[
-                new MessageEmbed().setColor('AQUA')
-                .setTitle('Quiz Anime Game')
-                .setFields([
-                    {
-                        name: multiGamingObject.userName,
-                        value:'your score is: ' + multiGamingObject.hostScore,
-                        inline:true
-                    },
-                    {
-                        name: multiGamingObject.gestUserName,
-                        value: 'your score is: ' + multiGamingObject.gestScore,
-                        inline:true
-                    }
-                ])
-                .setImage('attachment://' +
-                    gameImages[Number(multiGamingObject.stage)].name
-                )
-                .setFooter({
-                    text:'who is this anime character? tell us in a message.'
-                })
-            ],
-            files:[
-                new MessageAttachment(
-                    gameImages[Number(multiGamingObject.stage)].name
-                )
-            ]
-        }).then(res => {
-            startTimer();
-        })
-    }
-})*/
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -1551,22 +1494,25 @@ function customRandomNumber(interval,num,ceil){
 };
 
 //game timer luncher
-function startTimer(type,obj,multiGamingObject,gameMessage){
+function startTimer(timer,timerInterval,sendingStage,obj,isWritebale){
     timerInterval = setInterval(function(){
-    timer += 1
-    console.log(type)
-    if(timer === 5){
-        eventEmitter.emit('timeOver',[
-            type, 
-            obj,
-            multiGamingObject,
-            gameMessage
-        ]);
-        clearInterval(timerInterval);
-        timer = 1;
-    }
-},1000)
-};
+        timer += 1
+        if(timer === 5){
 
+            //reset the timer
+            clearInterval(timerInterval);
+            timer = 1;
+
+            if(sendingStage < 3){
+                //update key variables
+                sendingStage = 3;
+                isWritebale = false;
+
+                //send time over message
+                await obg.channel.send('Time is over, 5sec')
+            }
+        }
+    },1000)
+};
 
 
