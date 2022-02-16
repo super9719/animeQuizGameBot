@@ -1200,6 +1200,15 @@ client.on('messageCreate', async msg=>{
             gestAllowed,hostAllowed,answered
         } = globalGamingRooms[msg.channel.id];
         
+        //get the multi playing game object
+        let multiGamingObject = await MultiPlayerModel.findOne({
+            channelId: msg.channel.id
+        });
+
+        //fetch the game message to update it
+        let gameMessage = (await msg.channel.messages.fetch())
+        .get(multiGamingObject.gameMessageId);
+        
         //update game message
         if(Number(multiGamingObject.stage) <= gameImages.length -1){
 
