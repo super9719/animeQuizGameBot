@@ -1277,79 +1277,66 @@ client.on('messageCreate', async msg=>{
         
         }else{
 
-                        if(sendingStage === 3){
+            if(sendingStage === 3){
 
-                            let winner = (function(){
-                                const {hostScore,gestScore,gestUserName,userName} = multiGamingObject;
-                                if(Number(hostScore) > Number(gestScore)) return userName
-                                else return gestUserName
-                            })()
-                            await wait(2000);
-                            //he finishs the game
-                            gameMessage.edit({
-                                embeds:[
-                                    new MessageEmbed().setColor('AQUA')
-                                    .setTitle(`The winner is #${winner}`)
-                                    .setFields([
-                                        {
-                                            name: multiGamingObject.userName,
-                                            value:'your score is: ' + multiGamingObject.hostScore,
-                                            inline:true
-                                        },
-                                        {
-                                            name: multiGamingObject.gestUserName,
-                                            value: 'your score is: ' + multiGamingObject.gestScore,
-                                            inline:true
-                                        }
-                                    ])
-                                    .setImage('attachment://winner.jpg')
-                                ],
-                                files:[
-                                    new MessageAttachment('winner.jpg')
-                                ],
-                                components:[multiPlayAgainButton]
-
-                            }).then(async ()=>{
-                                
-                                //delete all messages except handler and game message
-                                const {gameMessageId, handlingMessageId} = multiGamingObject;
-                                const fetchedMessages = (await msg.channel.messages.fetch()).filter(elem => {
-                                    if(elem.id != gameMessageId && elem.id != handlingMessageId) return true
-                                });
+                let winner = (function(){
+                    const {hostScore,gestScore,gestUserName,userName} = multiGamingObject;
+                    if(Number(hostScore) > Number(gestScore)) return userName
+                    else return gestUserName
+                })()
+                await wait(2000);
+                //he finishs the game
+                gameMessage.edit({
+                    embeds:[
+                        new MessageEmbed().setColor('AQUA')
+                        .setTitle(`The winner is #${winner}`)
+                        .setFields([
+                            {
+                                name: multiGamingObject.userName,
+                                value:'your score is: ' + multiGamingObject.hostScore,
+                                inline:true
+                            },
+                            {
+                                name: multiGamingObject.gestUserName,
+                                value: 'your score is: ' + multiGamingObject.gestScore,
+                                inline:true
+                            }
+                        ])
+                        .setImage('attachment://winner.jpg')
+                    ],
+                    files:[
+                        new MessageAttachment('winner.jpg')
+                    ],
+                    components:[multiPlayAgainButton]
+                }).then(async ()=>{
+                    //delete all messages except handler and game message
+                    const {gameMessageId, handlingMessageId} = multiGamingObject;
+                    const fetchedMessages = (await msg.channel.messages.fetch()).filter(elem => {
+                        if(elem.id != gameMessageId && elem.id != handlingMessageId) return true
+                    });
                             
-                                await msg.channel.bulkDelete(fetchedMessages);
+                    await msg.channel.bulkDelete(fetchedMessages);
                                 
-                                //update key variables and multigamingObject
-                                
-                                sendingStage = 1;
-                                isWritebale = false;
-                                hostAllowed = true;
-                                gestAllowed = true;
-                                multiGamingObject.isWritable = false;
-                                multiGamingObject.hostAllowed = true;
-                                multiGamingObject.gestAllowed = true;
-                                multiGamingObject.answered = false;
-                                multiGamingObject.hostScore = '0';
-                                multiGamingObject.gestScore = '0';
-                                multiGamingObject.stage = '0';
-                                multiGamingObject = await multiGamingObject.save();
-                                
-                            })
-                        }
-                    }        
-    
-    
-    
+                    //update key variables and multigamingObject
+                    sendingStage = 1;
+                    isWritebale = false;
+                    hostAllowed = true;
+                    gestAllowed = true;
+                    multiGamingObject.isWritable = false;
+                    multiGamingObject.hostAllowed = true;
+                    multiGamingObject.gestAllowed = true;
+                    multiGamingObject.answered = false;
+                    multiGamingObject.hostScore = '0';
+                    multiGamingObject.gestScore = '0';
+                    multiGamingObject.stage = '0';
+                    multiGamingObject = await multiGamingObject.save();
+                })
+            }
+        }        
     }                    
-                    
-
-
                 }else{
                     msg ? await msg.delete():null;
-
-
                 }
-
             }
         }
     }  
