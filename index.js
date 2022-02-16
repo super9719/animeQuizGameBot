@@ -1504,7 +1504,7 @@ function customRandomNumber(interval,num,ceil){
 
 //game timer luncher
 function startTimer(timer,timerInterval,sendingStage,obj,isWritebale){
-    timerInterval = setInterval(function(){
+    timerInterval = setInterval(async function(){
         timer += 1
         if(timer === 5){
 
