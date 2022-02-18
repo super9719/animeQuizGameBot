@@ -1317,7 +1317,7 @@ client.on('channelDelete', async deletedChannel => {
 });
 
 
-client.login(Token)
+client.login('')
 
 /**********************************embeds , components , attachments ***************************/
 
