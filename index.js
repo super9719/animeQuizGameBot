@@ -409,7 +409,7 @@ client.on('interactionCreate', async interaction =>{
         }else if(interaction.component.customId === 'playagain'){///////////////////////
             
             //defere reply
-            interaction.deferReply({ephemeral:true});
+            interaction.deferUpdate({ephemeral:true});
 
             //assign the ninteraction to global key variables obj 
             soloRooms[interaction.user.id].obj = interaction;
