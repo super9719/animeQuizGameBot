@@ -26,7 +26,7 @@ const eventEmitter = new EventEmitter;
 .catch(err => console.log(err));*/
 
 mongoose.connect(
-    'mongodb+sr://aymen:super20191397@mycluster.os7ff.mongodb.net/gaming?retryWrites=true&w=majority'
+    'mongodb+srv://aymen:super20191397@mycluster.os7ff.mongodb.net/gaming?retryWrites=true&w=majority'
 ).then(() => {
     console.log('connected success')
 }).catch(err => console.log(err))
@@ -81,7 +81,95 @@ client.on('interactionCreate', async interaction =>{
     //handling slash command //////////////////////////////////////////////////////////////////////
     if(interaction.isCommand()){
 
-        if(interaction.commandName === 'solo'){
+        if(interaction.commandName === 'help'){////////////////////
+
+            //defere reply
+            await interaction.deferReply({ephemeral:true});
+            console.log(interaction.user.avatarURL())
+            await interaction.editReply({
+                embeds:[
+                    new MessageEmbed()
+                    .setAuthor({
+                        name:interaction.user.username,
+                        iconURL:interaction.user.avatarURL()
+                    })
+                    .setColor('BLURPLE')
+                    .setThumbnail('attachment://profile.jpg')
+                    .setFields([
+                        {
+                            name:".Prefix to this channel " + " 'Not Available'",
+                            value: 'support direct messages and slash commands',
+                            inline:false
+                        },
+                        {
+                            name:".Total commands 4 | Usable by you (here): 4",
+                            value: '\u200B',
+                            inline:false
+                        },
+                        {
+                            name:"|Command",
+                            value: '\u200B',
+                            inline:true
+                        },
+                        { name: '\u200B', value: '\u200B', inline:true},
+                        {
+                            name:'|Description',
+                            value: '\u200B',
+                            inline:true
+                        },
+                        {
+                            name:'help',
+                            value: '\u200B',
+                            inline:true
+                        },
+                        { name: '\u200B', value: '\u200B', inline:true},
+                        {
+                            name:'display quizAnimeGame message',
+                            value: '\u200B',
+                            inline:true
+                        },
+                        {
+                            name:'solo',
+                            value: '\u200B',
+                            inline:true
+                        },
+                        { name: '\u200B', value: '\u200B', inline:true},
+                        {
+                            name:'start playing quizAnimeGame',
+                            value: '\u200B',
+                            inline:true
+                        },
+                        {
+                            name:'multi',
+                            value: '\u200B',
+                            inline:true
+                        },
+                        { name: '\u200B', value: '\u200B', inline:true},
+                        {
+                            name:'start a multiPlayer game round',
+                            value: '\u200B',
+                            inline:true
+                        },
+                        {
+                            name:'topranks',
+                            value: '\u200B',
+                            inline:true
+                        },
+                        { name: '\u200B', value: '\u200B', inline:true},
+                        {
+                            name:'display top 10 players in the server',
+                            value: '\u200B',
+                            inline:true
+                        },
+                    ])
+                ],
+                files:[
+                    new MessageAttachment('profile.jpg')
+                ]
+            })
+
+
+        }else if(interaction.commandName === 'solo'){///////////////////////////////////////
 
             //defere reply
             await interaction.deferReply({ephemeral:true});
@@ -483,8 +571,9 @@ client.on('interactionCreate', async interaction =>{
             await interaction.deferUpdate({ephemeral:true});
             await interaction.editReply({
                 content:'Game closed...',
-                fetchReply:true,
-                ephemeral:true
+                embeds:[],
+                components:[],
+                components:[]
             });
 
             //get the gaming object for this user
@@ -1247,7 +1336,8 @@ client.on('messageCreate', async msg=>{
                 let winner = (function(){
                     const {hostScore,gestScore,userName,gestUserName} = multiGamingObject;
                     if(Number(hostScore) > Number(gestScore)) return userName
-                    else return gestUserName
+                    else if(Number(hostScore) === Number(gestScore)) return 'game end in draw :pensive:'
+                    else if(Number(hostScore) < Number(gestScore))return gestUserName
                 })()
                 //he finishs the game
                 gameMessage.edit({
@@ -1317,7 +1407,7 @@ client.on('channelDelete', async deletedChannel => {
 });
 
 
-client.login('')
+client.login(Token)
 
 /**********************************embeds , components , attachments ***************************/
 
