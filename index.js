@@ -36,7 +36,19 @@ mongoose.connect(
 let id,//id for the game section channel
 lastInteraction;
 
-//create a class to be used in create global key variables for each multiplaying room
+//create a class to be used in create global key variables for each multiplaying room 
+let soloRooms = {};
+class SoloRoom {
+    constructor(obj){
+        this.obj = obj;
+        this.soloSending = 0,
+        this.isWritebale = true,
+        this.timer = 1,
+        this.timerInterval
+    }
+}
+
+//create a class to be used in create global key variables for each multiplaying room 
 let globalGamingRooms = {};
 class CreateRoom {
     constructor(){
@@ -71,83 +83,63 @@ client.on('interactionCreate', async interaction =>{
 
         if(interaction.commandName === 'solo'){
 
-            if(interaction.channel.id === channelId){
+            //defere reply
+            await interaction.deferReply({ephemeral:true});
 
+            if(interaction.channel.id === channelId){
+            
                 //check if the user already has an opened game section'gaming object'
                 const check = await GamingObjectModel.findOne({
                     userId:interaction.user.id
                 })
+
                 if(check === null){
-                    //create a text channel for the user gaming section
-                    const channel = await interaction.guild.channels.create(
-                        'game-section',
-                        {   
-                            userLimit:2,
-                            type:'text',
-                            permissionOverwrites:[
-                                {
-                                    id:interaction.guild.roles.everyone,
-                                    deny:['VIEW_CHANNEL']//overwrite the everyone permission 
-                                },
-                                {
-                                    id:client.application.id,
-                                    allow:['VIEW_CHANNEL']
-                                },
-                                {
-                                    id:interaction.user.id,
-                                    allow:['VIEW_CHANNEL']
-                                }
-                            ]
-                        }
-                    );
-                    
-                    channel.isWritable = false; // prevent handling messages
-                    id = channel.id;//get the game section channel id
-                    
                         
                     //create gaming object
                     let gamingObject = await new GamingObjectModel(
                         {   
                             userName:interaction.user.username,
                             userId: interaction.user.id,
-                            userChannelId : channel.id,
                             stage:'0',
                             score:'0',
                             bestScore:'0'
                         }
                     ).save();
 
-                    (await interaction.guild.channels.fetch()).get(channel.id).send(
+                    await interaction.editReply(
                         {
                             content:'hello ' + interaction.user.username,
                             components:[startButton]
                         }
-                    ).then(async res => {
-                        gamingObject.handlerMessageId = res.id;
-                        await gamingObject.save();
-                    })
+                    )
 
-                    //tell the user to join his gaming section
-                    await interaction.reply({
-                        content:'Please join you game section channel to start playing',
-                        ephemeral:true
-                    });    
                 }else{
-                    interaction.reply('Game section already exict, join it to start play')
-                    .then(res => {
-                        setTimeout(async function(){
-                            await interaction.deleteReply()
-                        },3000)
-                    })
+
+                    if(check.active === true){
+
+                        await interaction.editReply({
+                            content:'there is already a game round'
+                        });
+
+                    }else if(check.active === false){
+
+                        check.active = true;
+                        await check.save();
+                        await interaction.editReply(
+                            {
+                                content:'hello ' + interaction.user.username,
+                                components:[startButton]
+                            }
+                        )
+
+                    }
                 }
                 
             }else{
-                await interaction.reply({
+
+                await interaction.editReply({
                     content:'This command is not allowed in this channel',
                 });
-                setTimeout(async function(){
-                    await interaction.deleteReply();
-                },10000)
 
             };
            
@@ -229,7 +221,7 @@ client.on('interactionCreate', async interaction =>{
                         unique: true, 
                         maxAge: 3600 
                     });
-
+                    
                     //create multiplayer channel
                     let channel = await interaction.guild.channels.create('multiplayer-section',{
                         type:'text',
@@ -278,7 +270,7 @@ client.on('interactionCreate', async interaction =>{
 
                     //create globalgaming room
                     globalGamingRooms[channel.id] = new CreateRoom();
-                    
+
                     //send reply
                     interaction.editReply({
                         content:'please join you multiplayer game section',
@@ -292,8 +284,8 @@ client.on('interactionCreate', async interaction =>{
 
                     //send the invitation
                     await targetUser.send({
-                        content:`Multiplayer invitation by <@${interaction.user.id}> 
-                        \njoin: http://discord.gg/${newInvitation.code}`
+                        content:
+                        `Multiplayer invitation by <@${interaction.user.id}> join: http://discord.gg/${newInvitation.code}`
                     })
 
                     //send message in the multiplayer channel
@@ -307,14 +299,15 @@ client.on('interactionCreate', async interaction =>{
 
         }else if(interaction.commandName === 'topranks'){
 
+            await interaction.deferReply({ephemeral:true})
+
             let allMembers = (await GamingObjectModel.find({})).sort((first,second)=>{
                 return Number(second.bestScore) - Number(first.bestScore)
             })
             if(allMembers !== null && allMembers !== undefined){
                 
                 //send the rank embed
-                await interaction.deferReply()
-                interaction.editReply({
+                await interaction.editReply({
                     ephemeral:true,
                     embeds:[
                         new MessageEmbed().setColor('DARK_ORANGE')
@@ -337,10 +330,6 @@ client.on('interactionCreate', async interaction =>{
                     ],
                     files:[new MessageAttachment('podium.jpg')],
                     fetchReply:true
-                }).then(rep => {
-                    setTimeout(async ()=>{
-                        await rep.delete();
-                    },30000)
                 })
             }
         }
@@ -355,98 +344,29 @@ client.on('interactionCreate', async interaction =>{
         //start button click
         if(interaction.component.customId === 'start'){//////////////////////////////
 
+            //defere update
+            await interaction.deferUpdate({ephemeral:true});
+
+            await interaction.editReply({
+                content:'Game is loading...',
+                components:[disabledStartButton]
+            });
+
             //get the gamingObject
             let gamingObject = await GamingObjectModel.findOne(
                 {
                     userId:interaction.user.id
                 }
-            );    
-
-            //update the button to end button and send the game embed message
-            await interaction.deferUpdate();
-            interaction.editReply({
-
-                content:'Game is loading...',
-                components:[disabledStartButton]
-
-            }).then(async inte => {
-
-                //send the game's embed
-                let gameMessage = await interaction.followUp({
-                    embeds:[
-                        new MessageEmbed().setColor('AQUA')
-                        .setTitle('Quiz Anime Game')
-                        .setFields([
-                            {
-                                name:'Score',
-                                value:'you score is: ' + gamingObject.score,
-                                inline:true
-                            },
-                            {
-                                name:'Best score',
-                                value:'Your best score is: ' + gamingObject.bestScore,
-                                inline:true
-                            }
-                        ])
-                        .setImage('attachment://' +
-                            gameImages[Number(gamingObject.stage)].name
-                        )
-                        .setFooter({
-                            text:'who is this anime character? tell us in a message.'
-                        })
-                    ],
-                    files:[
-                        new MessageAttachment(
-                            gameImages[Number(gamingObject.stage)].name
-                        )
-                    ]
-                })
-                //store the id of the embed game message
-                gamingObject.gameMessageId = gameMessage.id
-                gamingObject = await gamingObject.save();
-
-                //allow handling sended messages
-                interaction.channel.isWritebale = true;
-                gamingObject.isWritable = true;
-                gamingObject = await gamingObject.save();
-                
-                //update the message and button
-                await inte.edit({
-                    content:'playing...',
-                    components:[endButton]
-                })
-                
-            });   
-
-        }else if(interaction.component.customId === 'playagain'){///////////////////////
-            
-            //get the gaming object for this user
-            let gamingObject = await GamingObjectModel.findOne(
-                {
-                    userId:interaction.user.id
-                }
             );
-            gamingObject.score = '0';
-            gamingObject.stage = '0';
-            gamingObject = await gamingObject.save();
 
-            ////fetch the game message to update it
-            let gameMessage = (await interaction.channel.messages.fetch())
-            .get(gamingObject.gameMessageId);
+            //create a soloRoom (contains needed variables)
+            soloRooms[interaction.user.id] = new SoloRoom(interaction);
+            
 
-            //mix the game images array 
-            gameImages = arrayMixer(gameImages);
-
-            //update game message
-            let intReply;
-            interaction.reply({
-                content:'Game is loading...',
-                fetchReply:true
-            }).then(res => {
-                intReply = res;
-            });
-
-            gameMessage.edit({
+            //update the button to end's button and send the game embed message
+            
+            interaction.editReply({
+                content:'Playing...',
                 embeds:[
                     new MessageEmbed().setColor('AQUA')
                     .setTitle('Quiz Anime Game')
@@ -474,23 +394,97 @@ client.on('interactionCreate', async interaction =>{
                         gameImages[Number(gamingObject.stage)].name
                     )
                 ],
-                components:[]
+                components:[endButton]
+            }).then(async reply => {
+                //start timer
+                soloTimer(interaction.user.id,gamingObject)
+    
+                gamingObject.gameMessageId = reply.id;
+                await gamingObject.save();
+            })
+            
+                
+               
+
+        }else if(interaction.component.customId === 'playagain'){///////////////////////
+            
+            //defere reply
+            interaction.deferReply({ephemeral:true});
+
+            //assign the ninteraction to global key variables obj 
+            soloRooms[interaction.user.id].obj = interaction;
+            
+            //get the gaming object for this user
+            let gamingObject = await GamingObjectModel.findOne(
+                {
+                    userId:interaction.user.id
+                }
+            );
+            gamingObject.score = '0';
+            gamingObject.stage = '0';
+            gamingObject = await gamingObject.save();
+
+            //mix the game images array 
+            gameImages = arrayMixer(gameImages);
+
+            //update game message
+            await interaction.editReply({
+                content:'Game is loading...',
+                embeds:[],
+                files:[],
+                components:[],
+                ephemeral:true
+            })
+
+            await interaction.editReply({
+                content:'Playing...',
+                embeds:[
+                    new MessageEmbed().setColor('AQUA')
+                    .setTitle('Quiz Anime Game')
+                    .setFields([
+                        {
+                            name:'Score',
+                            value:'you score is: ' + gamingObject.score,
+                            inline:true
+                        },
+                        {
+                            name:'Best score',
+                            value:'Your best score is: ' + gamingObject.bestScore,
+                            inline:true
+                        }
+                    ])
+                    .setImage('attachment://' +
+                        gameImages[Number(gamingObject.stage)].name
+                    )
+                    .setFooter({
+                        text:'who is this anime character? tell us in a message.'
+                    })
+                ],
+                files:[
+                    new MessageAttachment(
+                        gameImages[Number(gamingObject.stage)].name
+                    )
+                ],
+                components:[endButton],
             }).then(async ()=> {
-                //delete reply
-                await intReply.delete()
 
                 //allow user to send a message 'his answer'
-                interaction.channel.isWritebale = true;
+                soloRooms[interaction.user.id].isWritebale = true;
                 gamingObject.isWritable = true;
                 gamingObject = await gamingObject.save();
+
+                //start timer
+                soloTimer(interaction.user.id,gamingObject)
             })
             
 
         }else if(interaction.component.customId === 'end'){///////////////////////////////
 
-            let intReply = await interaction.reply({
-                content:'Game closing...',
-                fetchReply:true
+            await interaction.deferReply({ephemeral:true});
+            await interaction.editReply({
+                content:'Game closed...',
+                fetchReply:true,
+                ephemeral:true
             });
 
             //get the gaming object for this user
@@ -501,42 +495,24 @@ client.on('interactionCreate', async interaction =>{
             );
             gamingObject.score = '0';
             gamingObject.stage = '0';
+            gamingObject.active = false;
 
-            //fetch the game message to delete it
-            let gameMessage = (await interaction.channel.messages.fetch())
-            .get(gamingObject.gameMessageId);
-            await gameMessage.delete();
 
             //remove it from the gaming object
             gamingObject.gameMessageId = '';
-            await gamingObject.save();
-
-            //fetch the handler message and update it
-            let handlerMessage = (await interaction.channel.messages.fetch())
-            .get(gamingObject.handlerMessageId);
-            handlerMessage.edit({
-                content: 'hello ' + interaction.user.username,
-                components: [startButton]
-            }).then(async ()=> {
-                await intReply.delete();
-            })
             
             //mix the array
             gameImages = arrayMixer(gameImages);
 
-            //prevent handling sended messages
-            interaction.channel.isWritebale = false;
+            //remove the global key variables object
+            delete soloRooms[interaction.user.id]
+
+            //prevent user from sending message in this channel
             gamingObject.isWritable = false;
             gamingObject = await gamingObject.save();
 
 
         }else if(interaction.component.customId === 'multiplaystart'){/////////////////////////////
-            
-            //get key variables for this channel
-            let {
-            sendingStage,isWritebale,timer,timerInterval,
-            gestAllowed,hostAllowed,answered
-            } = globalGamingRooms[interaction.channel.id];
 
             //disabled button after click and store the interaction id for later use 
             await interaction.update({
@@ -571,6 +547,12 @@ client.on('interactionCreate', async interaction =>{
 
             }else{
 
+                //get the key variables for this channel
+                let {
+                    sendingStage,isWritebale,timer,timerInterval,
+                    gestAllowed,hostAllowed,answered
+                } = globalGamingRooms[interaction.channel.id];
+
                 //get the multiplay gaming object
                 let multiGamingObject = await MultiPlayerModel.findOne({
                     channelId: interaction.channel.id
@@ -579,7 +561,6 @@ client.on('interactionCreate', async interaction =>{
                 //get the handling message 
                 let inter = [...interaction.channel.messages.cache.values()][0];
                 
-
                 //send the game's embed
                 interaction.followUp({
                     embeds:[
@@ -622,26 +603,21 @@ client.on('interactionCreate', async interaction =>{
 
                     //store the id of the embed game message
                     multiGamingObject.gameMessageId = follow.id;
-                    
-                    //start the timer
-                    startTimer(timer,timerInterval,sendingStage,interaction,isWritebale);
 
-                    //allow handling sended messages
-                    multiGamingObject.isWritable = true;
+                    //start the timer
+                    startTimer(interaction.channel.id,multiGamingObject,interaction);
                 })
+
                 
+                
+                //allow handling sended messages
+                multiGamingObject.isWritable = true;
                 multiGamingObject = await multiGamingObject.save();
             
             }
 
 
         }else if(interaction.component.customId === 'multiplayagain'){/////////////////////////////
-            
-            //get the key variables
-            let {
-            sendingStage,isWritebale,timer,timerInterval,
-            gestAllowed,hostAllowed,answered
-            } = globalGamingRooms[interaction.channel.id];
 
             //get the gaming object for this user
             let multiGamingObject = await MultiPlayerModel.findOne(
@@ -662,15 +638,14 @@ client.on('interactionCreate', async interaction =>{
             gameImages = arrayMixer(gameImages);
 
             //update game message
-            /*let intReply;
+            let intReply;
             interaction.reply({
                 content:'Game is loading...',
                 fetchReply:true
             }).then(res => {
                 intReply = res;
-                console.log('response',res)
-            });*/
-            
+            });
+
             gameMessage.edit({
                 embeds:[
                     new MessageEmbed().setColor('AQUA')
@@ -702,31 +677,26 @@ client.on('interactionCreate', async interaction =>{
                 components:[]
             }).then(async ()=> {
                 //delete reply
-                //intReply ? await intReply.delete():null;
+                intReply ? await intReply.delete():null;
 
                 //allow user to send a message 'his answer'
-                isWritebale = true
+                globalGamingRooms[interaction.channel.id].isWritebale = true
                 multiGamingObject.isWritable = true;
                 multiGamingObject = await multiGamingObject.save();
-                
+
                 //start timer
-                startTimer(timer,timerInterval,sendingStage,interaction,isWritebale)
+                startTimer(interaction.channel.id,multiGamingObject,interaction);
+
             })
 
 
         }else if(interaction.component.customId === 'multiplayend'){///////////////////////////////
 
+
             await interaction.update({
                 content:'Game closing...',
                 components:[]
             });
-    
-            //update key variables
-            isWritebale = false;
-            sendingStage = 1;
-            hostAllowed = true;
-            gestAllowed = true;
-            answered = false;
 
             //delete the channel
             await interaction.channel.delete();
@@ -799,10 +769,11 @@ client.on('interactionCreate', async interaction =>{
                 hostId:interaction.user.id,
                 gestId:targetUser.id
             }).save();
-            
+
             //create globalgaming room
             globalGamingRooms[channel.id] = new CreateRoom();
-            
+            console.log(globalGamingRooms)
+
             //send reply
             interaction.editReply({
                 content:'please join you multiplayer game section',
@@ -844,22 +815,27 @@ client.on('messageCreate', async msg=>{
 
         if(msg.channel.id === channelId){
 
-            await msg.delete();
-
-        }else if(msg.channel.id !== channelId){
-
-            if(msg.channel.parent === null){
                 //get the gaming object for this user
                 let gamingObject = await GamingObjectModel.findOne(
                     {
                         userId:msg.author.id
                     }
                 );
+
+                //get the global key variables
+                let isWritebale,timer,timerInterval,obj;
+                if(soloRooms[msg.author.id]){
+                    ({isWritebale,timer,timerInterval,obj} = soloRooms[msg.author.id]);   
+                }
                 
-                if(msg.channel.isWritebale || gamingObject.isWritable){
+                if(isWritebale || gamingObject?.isWritable){
+                
+                    //stop the interval
+                    timerInterval ? clearInterval(timerInterval) : null;
 
                     //prevent user from entering any other messages untill we checke the sended message
-                    msg.channel.isWritebale = false;
+                    soloRooms[msg.author.id].isWritebale = false;
+                    soloRooms[msg.author.id].soloSending = 1;
                     gamingObject.isWritable = false;
                     gamingObject = await gamingObject.save();
                     
@@ -875,7 +851,10 @@ client.on('messageCreate', async msg=>{
                         //handling correct answer
 
                         //display success message
-                        let msgReply = await msg.reply('Correct answer :smiley:');
+                        let msgReply = await msg.reply({
+                            content:'Correct answer :smiley:',
+                            ephemeral:true,
+                        });
 
                         //update gaming object 
                         gamingObject.stage = `${Number(gamingObject.stage) + 1}`;
@@ -888,7 +867,8 @@ client.on('messageCreate', async msg=>{
                         if(Number(gamingObject.stage) <= gameImages.length -1){
                             
                             //there is still images to quiz the user for
-                            gameMessage.edit({
+                            obj.editReply({
+                                content:'Playing...',
                                 embeds:[
                                     new MessageEmbed().setColor('AQUA')
                                     .setTitle('Quiz Anime Game')
@@ -915,16 +895,22 @@ client.on('messageCreate', async msg=>{
                                     new MessageAttachment(
                                         gameImages[Number(gamingObject.stage)].name
                                     )
-                                ]
+                                ],
+                                components:[endButton],
+                                ephemeral:true
                             }).then(async ()=>{
                                 //delete the user sended response message and reply
-                                await msg.delete();
                                 await msgReply.delete();
-
+                                await msg.delete();
+                            
                                 //allow user to send a message 'his answer'
-                                msg.channel.isWritebale = true;
+                                soloRooms[msg.author.id].isWritebale = true;
+                                soloRooms[msg.author.id].soloSending = 0;
                                 gamingObject.isWritable = true;
                                 gamingObject = await gamingObject.save();
+
+                                //start timer
+                                soloTimer(msg.author.id,gamingObject)
 
                                 
                             })
@@ -932,7 +918,8 @@ client.on('messageCreate', async msg=>{
                         }else{
 
                             //he finishs the game
-                            gameMessage.edit({
+                            obj.editReply({
+                                content:'Game finished',
                                 embeds:[
                                     new MessageEmbed().setColor('AQUA')
                                     .setTitle('Quiz Anime Game')
@@ -957,88 +944,58 @@ client.on('messageCreate', async msg=>{
 
                             }).then(async ()=>{
                                 //delete the user sended response message and reply
-                                await msg.delete()
                                 await msgReply.delete();
+                                await msg.delete()
                             })
                         }
                         
                         
                     }else{
                         //handling wrong answer
-                    
                         //display wrong message
-                        let replyMsg = await msg.reply(
-                            `Wrong answer :pensive:, game will start automaticaly`
-                        );
+                        await obj.editReply({
+                            content:"Wrong answer :pensive:\nGame's round end",
+                            files:[],
+                            embeds:[],
+                            components:[]
+                        });
 
                         //update gaming object 
                         gamingObject.stage = '0';
                         gamingObject.score = '0';
+                        gamingObject.active = false
+                        gamingObject.isWritable = false;
                         gamingObject = await gamingObject.save();
                         
                         //mix the array before starts again
                         gameImages = arrayMixer(gameImages);
 
-                        //update the game message 'game embed'
-                        gameMessage.edit({
-                            embeds:[
-                                new MessageEmbed().setColor('AQUA')
-                                .setTitle('Quiz Anime Game')
-                                .setFields([
-                                    {
-                                        name:'Score',
-                                        value:'you score is: ' + gamingObject.score,
-                                        inline:true
-                                    },
-                                    {
-                                        name:'Best score',
-                                        value:'Your best score is: ' + gamingObject.bestScore,
-                                        inline:true
-                                    }
-                                ])
-                                .setImage('attachment://' +
-                                    gameImages[Number(gamingObject.stage)].name
-                                )
-                                .setFooter({
-                                    text:'who is this anime character? tell us in a message.'
-                                })
-                            ],
-                            files:[
-                                new MessageAttachment(
-                                    gameImages[Number(gamingObject.stage)].name
-                                )
-                            ]
-                        }).then(async()=>{
+                        //delete global key variables object
+                        delete soloRooms[msg.author.id]
 
-                            //allow user to send messages
-                            msg.channel.isWritebale = true;
-                            gamingObject.isWritable = true;
-                            gamingObject = await gamingObject.save();
+                        await wait(3000);
 
-                            await wait(1000);
-
-                            //delete the user sended response message
-                            await msg.delete();
-
-                            //delete the reply message
-                            await replyMsg.delete();
-
-                            
-                        })  
+                        //delete the user sended response message
+                        await msg.delete();
+    
+                        
                     }
 
                 }else{
                     //delete message
                     msg.delete();
                 }
+                
+        }else{
 
-            }else{
+            if(msg.channel.parent !== null && msg.channel.id !== channelId){
 
                 //handling multi playing section messages /////////////////////
-                
-                //get the key variables for this channel
+
+                //get all the needed key variables from globalGamingRooms
                 let {
-                    sendingStage,isWritebale,gestAllowed,hostAllowed,answered
+                    sendingStage,isWritebale,timer,timerInterval,
+                    gestAllowed,hostAllowed,answered
                 } = globalGamingRooms[msg.channel.id];
                 
                 //get the multi playing game object
@@ -1061,19 +1018,19 @@ client.on('messageCreate', async msg=>{
                         //handling message as first message
                         if(sendingStage === 1){
                             
-                            //increase sending stage by one one message received
-                            sendingStage += 1;
+                            //increase sending stage by one on message received
+                            globalGamingRooms[msg.channel.id].sendingStage += 1;
 
                             //update key variables
                             multiGamingObject.hostAllowed = false;
-                            hostAllowed = false;
+                            globalGamingRooms[msg.channel.id].hostAllowed = false;
 
                             //only correct answer
                             if(msg.content.toLowerCase() === correctAnswer){
                                 
                                 //update key variables
-                                sendingStage += 1;
-                                answered = true;
+                                globalGamingRooms[msg.channel.id].sendingStage += 1;
+                                globalGamingRooms[msg.channel.id].answered = true;
 
                                 //send success message
                                 await msg.channel.send(`Correct answer by ${msg.author.username} :smiley:`);
@@ -1093,7 +1050,7 @@ client.on('messageCreate', async msg=>{
 
                         }else if(sendingStage === 2){
                             
-                            if(!answered && !multiGamingObject.answered && hostAllowed){
+                            if(!answered && hostAllowed){
                                 
                                 //update key variables
                                 sendingStage += 1;
@@ -1102,7 +1059,7 @@ client.on('messageCreate', async msg=>{
                                 multiGamingObject.hostAllowed = false;
 
                                 if(msg.content.toLowerCase() === correctAnswer){
-                                    
+        
                                     //send success message
                                     await msg.channel.send(`Correct answer by ${msg.author.username} :smiley:`);
         
@@ -1161,7 +1118,7 @@ client.on('messageCreate', async msg=>{
 
                         }else if(sendingStage === 2){
                             console.log('before allowed')
-                            console.log(answered,multiGamingObject.answered,multiGamingObject.gestAllowed)
+                            console.log(!answered,!multiGamingObject.answered)
                             if(!answered && multiGamingObject.gestAllowed){
                                 console.log('allowed')
                                 //update key variables
@@ -1177,8 +1134,6 @@ client.on('messageCreate', async msg=>{
                                     //update multigamingObject
                                     multiGamingObject.stage = `${Number(multiGamingObject.stage) + 1}`;
                                     multiGamingObject.gestScore = `${Number(multiGamingObject.gestScore) + 1}`;
-                                    multiGamingObject = await multiGamingObject.save();
-
 
                                 }else{
                                     //wrong answer
@@ -1188,18 +1143,31 @@ client.on('messageCreate', async msg=>{
 
                                     //update multigamingObject
                                     multiGamingObject.stage = `${Number(multiGamingObject.stage) + 1}`;
-                                    multiGamingObject = await multiGamingObject.save();
+                                
                                 }
+                                multiGamingObject = await multiGamingObject.save();
+
                             }else console.log('not allowed')
                         }else if(sendingStage === 3) msg ? await msg.delete() :null;
                     }
+
+                }else{
+                    msg ? await msg.delete():null;
+                }
+            }
+        }
+    }
+
+
+    //just for multiplayer section
     if(msg.channel.parent !== null){
-        //get key variables for this channel
+
+        //get all the needed key variables from globalGamingRooms
         let {
             sendingStage,isWritebale,timer,timerInterval,
             gestAllowed,hostAllowed,answered
         } = globalGamingRooms[msg.channel.id];
-        
+        console.log(sendingStage,'from update')
         //get the multi playing game object
         let multiGamingObject = await MultiPlayerModel.findOne({
             channelId: msg.channel.id
@@ -1208,22 +1176,20 @@ client.on('messageCreate', async msg=>{
         //fetch the game message to update it
         let gameMessage = (await msg.channel.messages.fetch())
         .get(multiGamingObject.gameMessageId);
-        
+
         //update game message
         if(Number(multiGamingObject.stage) <= gameImages.length -1){
 
             if(sendingStage === 3){
-                
-                sendingStage += 1 //to prevent leaked access
+
+                globalGamingRooms[msg.channel.id].sendingStage += 1 //to prevent leaked access
                 console.log('update game message')
-                            
-                await wait(2000) // stop for a moment so users can see replies
                 //there is still images to quiz the user for
                 gameMessage.edit({
                     embeds:[
                         new MessageEmbed().setColor('AQUA')
                         .setTitle('Quiz Anime Game')
-                        .setFields(
+                        .setFields([
                             {
                                 name: multiGamingObject.userName,
                                 value:'your score is: ' + multiGamingObject.hostScore,
@@ -1238,15 +1204,15 @@ client.on('messageCreate', async msg=>{
                         .setImage('attachment://' +
                             gameImages[Number(multiGamingObject.stage)].name
                         )
-                         .setFooter({
+                        .setFooter({
                             text:'who is this anime character? tell us in a message.'
                         })
-                        ],
-                        files:[
-                            new MessageAttachment(
-                            gameImages[Number(multiGamingObject.stage)].name
-                            )
-                        ]
+                    ],
+                    files:[
+                        new MessageAttachment(
+                        gameImages[Number(multiGamingObject.stage)].name
+                        )
+                    ]
                 }).then(async ()=>{
 
                     //delete all messages except handler and game message
@@ -1254,37 +1220,35 @@ client.on('messageCreate', async msg=>{
                     const fetchedMessages = (await msg.channel.messages.fetch()).filter(elem => {
                         if(elem.id != gameMessageId && elem.id != handlingMessageId) return true
                     });
-                            
+                
                     await msg.channel.bulkDelete(fetchedMessages);
-                                
+                    
                     //update key variables and multigamingObject
-                    setTimeout(async ()=>{
-                        answered = false;
-                        sendingStage = 1;
-                        isWritebale = true;
-                        hostAllowed = true;
-                        gestAllowed = true;
-                        multiGamingObject.isWritable = true;
-                        multiGamingObject.hostAllowed = true;
-                        multiGamingObject.gestAllowed = true;
-                        multiGamingObject = await multiGamingObject.save();
-                    },1000);
+                    globalGamingRooms[msg.channel.id].answered = false;
+                    globalGamingRooms[msg.channel.id].sendingStage = 1;
+                    globalGamingRooms[msg.channel.id].isWritebale = true;
+                    globalGamingRooms[msg.channel.id].hostAllowed = true;
+                    globalGamingRooms[msg.channel.id].gestAllowed = true;
+                    multiGamingObject.isWritable = true;
+                    multiGamingObject.hostAllowed = true;
+                    multiGamingObject.gestAllowed = true;
+                    multiGamingObject = await multiGamingObject.save();
 
                     //start the timer
-                    startTimer(timer,timerInterval,sendingStage,msg,isWritebale);
+                    startTimer(msg.channel.id,multiGamingObject,msg);
+
                 })
             }
-        
+
         }else{
 
             if(sendingStage === 3){
 
                 let winner = (function(){
-                    const {hostScore,gestScore,gestUserName,userName} = multiGamingObject;
+                    const {hostScore,gestScore,userName,gestUserName} = multiGamingObject;
                     if(Number(hostScore) > Number(gestScore)) return userName
                     else return gestUserName
                 })()
-                await wait(2000);
                 //he finishs the game
                 gameMessage.edit({
                     embeds:[
@@ -1308,38 +1272,32 @@ client.on('messageCreate', async msg=>{
                         new MessageAttachment('winner.jpg')
                     ],
                     components:[multiPlayAgainButton]
+
                 }).then(async ()=>{
+                    
                     //delete all messages except handler and game message
                     const {gameMessageId, handlingMessageId} = multiGamingObject;
                     const fetchedMessages = (await msg.channel.messages.fetch()).filter(elem => {
                         if(elem.id != gameMessageId && elem.id != handlingMessageId) return true
                     });
-                            
+                
                     await msg.channel.bulkDelete(fetchedMessages);
-                                
+                    
                     //update key variables and multigamingObject
-                    sendingStage = 1;
-                    isWritebale = false;
-                    hostAllowed = true;
-                    gestAllowed = true;
+                    globalGamingRooms[msg.channel.id].sendingStage = 1;
+                    globalGamingRooms[msg.channel.id].isWritebale = false;
+                    globalGamingRooms[msg.channel.id].hostAllowed = true;
+                    globalGamingRooms[msg.channel.id].gestAllowed = true;
                     multiGamingObject.isWritable = false;
                     multiGamingObject.hostAllowed = true;
                     multiGamingObject.gestAllowed = true;
-                    multiGamingObject.answered = false;
-                    multiGamingObject.hostScore = '0';
-                    multiGamingObject.gestScore = '0';
-                    multiGamingObject.stage = '0';
                     multiGamingObject = await multiGamingObject.save();
+
                 })
             }
-        }        
-    }                    
-                }else{
-                    msg ? await msg.delete():null;
-                }
-            }
-        }
-    }  
+        }  
+    }
+    
 })
 
 
@@ -1439,6 +1397,17 @@ const disabledmultiPlayAgainButton = new MessageActionRow().addComponents(
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 /*****************************************cusrtom functions*****************************/
 //mix array elements
 function arrayMixer(arr){
@@ -1490,25 +1459,73 @@ function customRandomNumber(interval,num,ceil){
 };
 
 //game timer luncher
-function startTimer(timer,timerInterval,sendingStage,obj,isWritebale){
-    timerInterval = setInterval(async function(){
-        timer += 1
-        if(timer === 5){
+function startTimer(channelId,multiGamingObject,obj){
+    console.log('obj',Boolean(obj))
+    let {
+        timer,timerInterval,isWritebale,sendingStage,
+    } = globalGamingRooms[channelId];
 
+    timerInterval = setInterval(async function(){
+
+        timer += 1
+        console.log('timer',timer)
+        if(timer === 5){
+            console.log('sending stage is',sendingStage)
             //reset the timer
             clearInterval(timerInterval);
             timer = 1;
 
             if(sendingStage < 3){
                 //update key variables
-                sendingStage = 3;
-                isWritebale = false;
+                globalGamingRooms[channelId].sendingStage = 3;
+                globalGamingRooms[channelId].isWritebale = false;
+
+                //update multiGaming object
+                multiGamingObject.stage = Number(multiGamingObject.stage) + 1;
+                multiGamingObject = await multiGamingObject.save();
 
                 //send time over message
-                await obg.channel.send('Time is over, 5sec')
+                await obj.channel.send('Time is over, 5sec')
             }
         }
     },1000)
 };
+
+//solo play timer
+function soloTimer(key, gamingObject){
+
+    let {timer,isWritebale,soloSending,obj} = soloRooms[key];
+
+    soloRooms[key].timerInterval = setInterval(async function(){
+
+        timer +=1;
+        if(timer === 10){
+
+            //clear the interval
+            clearInterval(soloRooms[key].timerInterval);
+            soloRooms[key].timer = 1;
+
+            if(soloSending < 1){
+
+                await obj.editReply({
+                    content:"Time is over, 10sec :pensive:\nGame's round end",
+                    embeds:[],
+                    files :[],
+                    components:[]
+                })
+
+                //update gamingObject
+                gamingObject.stage = 0
+                gamingObject.score = 0;
+                gamingObject.active = false;
+                await gamingObject.save();
+
+                //delete global key variables
+                delete soloRooms[key];
+            }
+        }
+
+    },1000);
+}
 
 
