@@ -26,7 +26,7 @@ const eventEmitter = new EventEmitter;
 .catch(err => console.log(err));*/
 
 mongoose.connect(
-    'mongodb+srv://aymen:super20191397@mycluster.os7ff.mongodb.net/gaming?retryWrites=true&w=majority'
+    'mongodb+sr://aymen:super20191397@mycluster.os7ff.mongodb.net/gaming?retryWrites=true&w=majority'
 ).then(() => {
     console.log('connected success')
 }).catch(err => console.log(err))
