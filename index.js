@@ -118,29 +118,29 @@ client.on('interactionCreate', async interaction =>{
                             inline:true
                         },
                         {
-                            name:'help',
+                            name:'.help',
                             value: '\u200B',
                             inline:true
                         },
                         { name: '\u200B', value: '\u200B', inline:true},
                         {
-                            name:'display quizAnimeGame message',
+                            name:':shield: display quizAnimeGame help message',
                             value: '\u200B',
                             inline:true
                         },
                         {
-                            name:'solo',
+                            name:'.solo',
                             value: '\u200B',
                             inline:true
                         },
                         { name: '\u200B', value: '\u200B', inline:true},
                         {
-                            name:'start playing quizAnimeGame',
+                            name:':man_playing_handball: start playing quizAnimeGame',
                             value: '\u200B',
                             inline:true
                         },
                         {
-                            name:'multi',
+                            name:'.multi',
                             value: '\u200B',
                             inline:true
                         },
@@ -151,13 +151,13 @@ client.on('interactionCreate', async interaction =>{
                             inline:true
                         },
                         {
-                            name:'topranks',
+                            name:'.topranks',
                             value: '\u200B',
                             inline:true
                         },
                         { name: '\u200B', value: '\u200B', inline:true},
                         {
-                            name:'display top 10 players in the server',
+                            name:':trophy: display top 10 players in the server',
                             value: '\u200B',
                             inline:true
                         },
