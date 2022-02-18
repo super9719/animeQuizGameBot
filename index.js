@@ -480,7 +480,7 @@ client.on('interactionCreate', async interaction =>{
 
         }else if(interaction.component.customId === 'end'){///////////////////////////////
 
-            await interaction.deferReply({ephemeral:true});
+            await interaction.deferUpdate({ephemeral:true});
             await interaction.editReply({
                 content:'Game closed...',
                 fetchReply:true,
