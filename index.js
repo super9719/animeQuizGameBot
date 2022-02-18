@@ -146,7 +146,7 @@ client.on('interactionCreate', async interaction =>{
                         },
                         { name: '\u200B', value: '\u200B', inline:true},
                         {
-                            name:'start a multiPlayer game round',
+                            name:' :men_wrestling: start a multiPlayer game round',
                             value: '\u200B',
                             inline:true
                         },
@@ -1120,13 +1120,11 @@ client.on('messageCreate', async msg=>{
                                 //update key variables
                                 globalGamingRooms[msg.channel.id].sendingStage += 1;
                                 globalGamingRooms[msg.channel.id].answered = true;
-
+                                globalGamingRooms[msg.channel.id].hostAllowed = false;
                                 //send success message
                                 await msg.channel.send(`Correct answer by ${msg.author.username} :smiley:`);
 
-                                //update multigamingObject and key variables
-                                answered = true;
-                                hostAllowed = false;
+                                //update multigamingObject
                                 multiGamingObject.stage = `${Number(multiGamingObject.stage) + 1}`;
                                 multiGamingObject.hostScore = `${Number(multiGamingObject.hostScore) + 1}`;
                                 multiGamingObject.answered = true;
@@ -1144,6 +1142,8 @@ client.on('messageCreate', async msg=>{
                                 //update key variables
                                 sendingStage += 1;
                                 isWritebale = false;
+                                globalGamingRooms[msg.channel.id].sendingStage += 1;
+                                globalGamingRooms[msg.channel.id].isWritebale = false;
                                 multiGamingObject.isWritable = false;
                                 multiGamingObject.hostAllowed = false;
 
@@ -1169,7 +1169,7 @@ client.on('messageCreate', async msg=>{
 
                             }
                             
-                        }else if(sendingStage === 3) msg ? await msg.delete():null;
+                        }else if(sendingStage >= 3) msg ? await msg.delete():null;
 
                     }else if(msg.author.id === multiGamingObject.gestId){//handling gest user answer
                         console.log('gestsender',sendingStage)
@@ -1178,6 +1178,9 @@ client.on('messageCreate', async msg=>{
 
                             //increase sending stage by one one message received
                             sendingStage += 1
+                            gestAllowed = false;
+                            globalGamingRooms[msg.channel.id].sendingStage += 1;
+                            globalGamingRooms[msg.channel.id].gestAllowed = false;
 
                             //update key variable
                             multiGamingObject.gestAllowed = false;
@@ -1188,13 +1191,13 @@ client.on('messageCreate', async msg=>{
                                 //update key variables
                                 sendingStage += 1;
                                 answered = true;
+                                globalGamingRooms[msg.channel.id].sendingStage += 1;
+                                globalGamingRooms[msg.channel.id].answered = true;
 
                                 //send success message
                                 await msg.channel.send(`Correct answer by ${msg.author.username} :smiley:`);
 
-                                //update multigamingObject and key variables
-                                gestAllowed = false;
-                                answered = true;
+                                //update multigamingObject
                                 multiGamingObject.stage = `${Number(multiGamingObject.stage) + 1}`;
                                 multiGamingObject.hostScore = `${Number(multiGamingObject.gestScore) + 1}`;
                                 multiGamingObject.answered = true;
@@ -1206,13 +1209,14 @@ client.on('messageCreate', async msg=>{
                             }
 
                         }else if(sendingStage === 2){
-                            console.log('before allowed')
-                            console.log(!answered,!multiGamingObject.answered)
+                            
                             if(!answered && multiGamingObject.gestAllowed){
-                                console.log('allowed')
+                                
                                 //update key variables
                                 sendingStage += 1;
+                                globalGamingRooms[msg.channel.id].sendingStage += 1;
                                 isWritebale = false;
+                                globalGamingRooms[msg.channel.id].isWritebale
                                 multiGamingObject.isWritable = false;
 
                                 if(msg.content.toLowerCase() === correctAnswer){
@@ -1237,7 +1241,7 @@ client.on('messageCreate', async msg=>{
                                 multiGamingObject = await multiGamingObject.save();
 
                             }else console.log('not allowed')
-                        }else if(sendingStage === 3) msg ? await msg.delete() :null;
+                        }else if(sendingStage >= 3) msg ? await msg.delete() :null;
                     }
 
                 }else{
@@ -1256,7 +1260,7 @@ client.on('messageCreate', async msg=>{
             sendingStage,isWritebale,timer,timerInterval,
             gestAllowed,hostAllowed,answered
         } = globalGamingRooms[msg.channel.id];
-        console.log(sendingStage,'from update')
+        
         //get the multi playing game object
         let multiGamingObject = await MultiPlayerModel.findOne({
             channelId: msg.channel.id
@@ -1270,9 +1274,9 @@ client.on('messageCreate', async msg=>{
         if(Number(multiGamingObject.stage) <= gameImages.length -1){
 
             if(sendingStage === 3){
-
+                sendingStage += 1;
                 globalGamingRooms[msg.channel.id].sendingStage += 1 //to prevent leaked access
-                console.log('update game message')
+                
                 //there is still images to quiz the user for
                 gameMessage.edit({
                     embeds:[
@@ -1550,7 +1554,6 @@ function customRandomNumber(interval,num,ceil){
 
 //game timer luncher
 function startTimer(channelId,multiGamingObject,obj){
-    console.log('obj',Boolean(obj))
     let {
         timer,timerInterval,isWritebale,sendingStage,
     } = globalGamingRooms[channelId];
@@ -1558,12 +1561,11 @@ function startTimer(channelId,multiGamingObject,obj){
     timerInterval = setInterval(async function(){
 
         timer += 1
-        console.log('timer',timer)
-        if(timer === 5){
-            console.log('sending stage is',sendingStage)
+        if(timer === 10){
             //reset the timer
             clearInterval(timerInterval);
             timer = 1;
+            globalGamingRooms[channelId].timer = 1
 
             if(sendingStage < 3){
                 //update key variables
@@ -1575,7 +1577,7 @@ function startTimer(channelId,multiGamingObject,obj){
                 multiGamingObject = await multiGamingObject.save();
 
                 //send time over message
-                await obj.channel.send('Time is over, 5sec')
+                await obj.channel.send('Time is over, 10sec :pensive:')
             }
         }
     },1000)
