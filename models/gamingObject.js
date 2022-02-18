@@ -38,6 +38,10 @@ const GamingObjectSchema = new Schema({
     isWritable:{
         type:Boolean,
         default:false,
+    },
+    active:{
+        type:Boolean,
+        default:true
     }
 
 });
