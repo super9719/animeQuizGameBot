@@ -1351,7 +1351,7 @@ client.on('messageCreate', async msg=>{
             if(sendingStage === 3){
                 
                 //stop the timer
-                globalGamingRooms[msg.channel.id].timerInterval ? clearInterval(globalGamingRooms[msg.channel.id].timerInterval):null
+                clearInterval(globalGamingRooms[msg.channel.id].timerInterval)
                 globalGamingRooms[msg.channel.id].sendingStage += 1 //to prevent leaked access
                 let winner = (function(){
                     const {hostScore,gestScore,userName,gestUserName} = multiGamingObject;
