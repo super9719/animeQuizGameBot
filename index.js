@@ -499,7 +499,7 @@ client.on('interactionCreate', async interaction =>{
             //defere reply
             await interaction.deferUpdate({ephemeral:true});
 
-            //assign the ninteraction to global key variables obj 
+            //assign the new interaction to global key variables obj 
             soloRooms[interaction.user.id].obj = interaction;
             
             //get the gaming object for this user
@@ -770,6 +770,7 @@ client.on('interactionCreate', async interaction =>{
 
                 //allow user to send a message 'his answer'
                 globalGamingRooms[interaction.channel.id].isWritebale = true
+                globalGamingRooms[msg.channel.id].sendingStage = 1
                 multiGamingObject.isWritable = true;
                 multiGamingObject = await multiGamingObject.save();
 
@@ -1072,7 +1073,7 @@ client.on('messageCreate', async msg=>{
 
                 }else{
                     //delete message
-                    msg.delete();
+                    //msg.delete();
                 }
                 
         }else{
@@ -1103,7 +1104,7 @@ client.on('messageCreate', async msg=>{
 
                     //handling host user answer
                     if(msg.author.id === multiGamingObject.hostId){
-                        console.log(sendingStage)
+                        
                         //handling message as first message
                         if(sendingStage === 1){
                             
@@ -1120,7 +1121,7 @@ client.on('messageCreate', async msg=>{
                                 //update key variables
                                 globalGamingRooms[msg.channel.id].sendingStage += 1;
                                 globalGamingRooms[msg.channel.id].answered = true;
-                                globalGamingRooms[msg.channel.id].hostAllowed = false;
+                                
                                 //send success message
                                 await msg.channel.send(`Correct answer by ${msg.author.username} :smiley:`);
 
@@ -1169,10 +1170,10 @@ client.on('messageCreate', async msg=>{
 
                             }
                             
-                        }else if(sendingStage >= 3) msg ? await msg.delete():null;
+                        }
 
                     }else if(msg.author.id === multiGamingObject.gestId){//handling gest user answer
-                        console.log('gestsender',sendingStage)
+                        
                         //handling message a first message
                         if(sendingStage === 1){
 
@@ -1216,7 +1217,7 @@ client.on('messageCreate', async msg=>{
                                 sendingStage += 1;
                                 globalGamingRooms[msg.channel.id].sendingStage += 1;
                                 isWritebale = false;
-                                globalGamingRooms[msg.channel.id].isWritebale
+                                globalGamingRooms[msg.channel.id].isWritebale = false;
                                 multiGamingObject.isWritable = false;
 
                                 if(msg.content.toLowerCase() === correctAnswer){
@@ -1240,12 +1241,12 @@ client.on('messageCreate', async msg=>{
                                 }
                                 multiGamingObject = await multiGamingObject.save();
 
-                            }else console.log('not allowed')
-                        }else if(sendingStage >= 3) msg ? await msg.delete() :null;
+                            }
+                        }//else if(sendingStage >= 3) msg ? await msg.delete() :null;
                     }
 
                 }else{
-                    msg ? await msg.delete():null;
+                    //msg ? await msg.delete():null;
                 }
             }
         }
@@ -1336,7 +1337,7 @@ client.on('messageCreate', async msg=>{
         }else{
 
             if(sendingStage === 3){
-
+                globalGamingRooms[msg.channel.id].sendingStage += 1 //to prevent leaked access
                 let winner = (function(){
                     const {hostScore,gestScore,userName,gestUserName} = multiGamingObject;
                     if(Number(hostScore) > Number(gestScore)) return userName
@@ -1378,7 +1379,6 @@ client.on('messageCreate', async msg=>{
                     await msg.channel.bulkDelete(fetchedMessages);
                     
                     //update key variables and multigamingObject
-                    globalGamingRooms[msg.channel.id].sendingStage = 1;
                     globalGamingRooms[msg.channel.id].isWritebale = false;
                     globalGamingRooms[msg.channel.id].hostAllowed = true;
                     globalGamingRooms[msg.channel.id].gestAllowed = true;
