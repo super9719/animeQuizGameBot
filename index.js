@@ -728,7 +728,7 @@ client.on('interactionCreate', async interaction =>{
 
             //update game message
             let intReply;
-            interaction.reply({
+            interaction.channel.send({
                 content:'Game is loading...',
                 fetchReply:true
             }).then(res => {
