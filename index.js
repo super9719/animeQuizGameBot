@@ -1108,6 +1108,9 @@ client.on('messageCreate', async msg=>{
                         //handling message as first message
                         if(sendingStage === 1){
                             
+                            //stop the timer
+                            clearInterval(globalGamingRooms[msg.channel.id].timerInterval)
+                            
                             //increase sending stage by one on message received
                             globalGamingRooms[msg.channel.id].sendingStage += 1;
 
@@ -1139,6 +1142,9 @@ client.on('messageCreate', async msg=>{
                         }else if(sendingStage === 2){
                             
                             if(!answered && hostAllowed){
+                                
+                                //stop the timer
+                                clearInterval(globalGamingRooms[msg.channel.id].timerInterval)
                                 
                                 //update key variables
                                 sendingStage += 1;
@@ -1188,6 +1194,9 @@ client.on('messageCreate', async msg=>{
 
                             //only correct answer
                             if(msg.content.toLowerCase() === correctAnswer){
+                                
+                                //stop the timer
+                                clearInterval(globalGamingRooms[msg.channel.id].timerInterval)
 
                                 //update key variables
                                 sendingStage += 1;
@@ -1212,6 +1221,9 @@ client.on('messageCreate', async msg=>{
                         }else if(sendingStage === 2){
                             
                             if(!answered && multiGamingObject.gestAllowed){
+                                
+                                //stop the timer
+                                clearInterval(globalGamingRooms[msg.channel.id].timerInterval)
                                 
                                 //update key variables
                                 sendingStage += 1;
@@ -1558,12 +1570,12 @@ function startTimer(channelId,multiGamingObject,obj){
         timer,timerInterval,isWritebale,sendingStage,
     } = globalGamingRooms[channelId];
 
-    timerInterval = setInterval(async function(){
+    globalGamingRooms[channelId].timerInterval = setInterval(async function(){
 
         timer += 1
         if(timer === 10){
             //reset the timer
-            clearInterval(timerInterval);
+            clearInterval(globalGamingRooms[channelId].timerInterval);
             timer = 1;
             globalGamingRooms[channelId].timer = 1
 
