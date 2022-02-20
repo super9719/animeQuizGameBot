@@ -1073,7 +1073,7 @@ client.on('messageCreate', async msg=>{
 
                 }else{
                     //delete message
-                    await msg.reply('hello');
+                    //await msg.delete()
                 }
                 
         }else{
