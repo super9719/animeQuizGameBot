@@ -708,7 +708,7 @@ client.on('interactionCreate', async interaction =>{
 
 
         }else if(interaction.component.customId === 'multiplayagain'){/////////////////////////////
-            interaction.deferReply()
+            await interaction.deferReply()
             interaction.editReply('.').then(async res => await res.delete())
             
             //get the gaming object for this user
@@ -1076,7 +1076,7 @@ client.on('messageCreate', async msg=>{
 
                 }else{
                     //delete message
-                    msg.delete();
+                    //msg.delete();
                 }
                 
         }else{
