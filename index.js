@@ -1108,9 +1108,6 @@ client.on('messageCreate', async msg=>{
                         //handling message as first message
                         if(sendingStage === 1){
                             
-                            //stop the timer
-                            clearInterval(globalGamingRooms[msg.channel.id].timerInterval)
-                            
                             //increase sending stage by one on message received
                             globalGamingRooms[msg.channel.id].sendingStage += 1;
 
@@ -1120,6 +1117,10 @@ client.on('messageCreate', async msg=>{
 
                             //only correct answer
                             if(msg.content.toLowerCase() === correctAnswer){
+                                
+                                //stop the timer
+                                clearInterval(globalGamingRooms[msg.channel.id].timerInterval)
+                                globalGamingRooms[msg.channel.id].timer = 1
                                 
                                 //update key variables
                                 globalGamingRooms[msg.channel.id].sendingStage += 1;
@@ -1145,6 +1146,7 @@ client.on('messageCreate', async msg=>{
                                 
                                 //stop the timer
                                 clearInterval(globalGamingRooms[msg.channel.id].timerInterval)
+                                globalGamingRooms[msg.channel.id].timer = 1
                                 
                                 //update key variables
                                 sendingStage += 1;
@@ -1197,6 +1199,7 @@ client.on('messageCreate', async msg=>{
                                 
                                 //stop the timer
                                 clearInterval(globalGamingRooms[msg.channel.id].timerInterval)
+                                globalGamingRooms[msg.channel.id].timer = 1
 
                                 //update key variables
                                 sendingStage += 1;
@@ -1224,6 +1227,7 @@ client.on('messageCreate', async msg=>{
                                 
                                 //stop the timer
                                 clearInterval(globalGamingRooms[msg.channel.id].timerInterval)
+                                globalGamingRooms[msg.channel.id].timer = 1
                                 
                                 //update key variables
                                 sendingStage += 1;
