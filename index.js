@@ -594,6 +594,7 @@ client.on('interactionCreate', async interaction =>{
             gameImages = arrayMixer(gameImages);
 
             //remove the global key variables object
+            clearInterval(soloRooms[interaction.user.id].timerInterval)
             delete soloRooms[interaction.user.id]
 
             //prevent user from sending message in this channel
@@ -707,7 +708,7 @@ client.on('interactionCreate', async interaction =>{
 
 
         }else if(interaction.component.customId === 'multiplayagain'){/////////////////////////////
-
+            
             //get the gaming object for this user
             let multiGamingObject = await MultiPlayerModel.findOne(
                 {
@@ -1736,7 +1737,7 @@ function soloTimer(key, gamingObject){
         if(timer === 10){
 
             //clear the interval
-            clearInterval(soloRooms[key].timerInterval);
+            clearInterval(soloRooms[key]?.timerInterval);
             soloRooms[key].timer = 1;
 
             if(soloSending < 1){
