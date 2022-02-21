@@ -715,7 +715,7 @@ client.on('interactionCreate', async interaction =>{
                     channelId:interaction.channel.id
                 }
             );
-            multiGamingObject.hostscore = '0';
+            multiGamingObject.hostScore = '0';
             multiGamingObject.gestScore = '0';
             multiGamingObject.stage = '0'
             multiGamingObject = await multiGamingObject.save();
