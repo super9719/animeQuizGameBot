@@ -709,8 +709,8 @@ client.on('interactionCreate', async interaction =>{
 
         }else if(interaction.component.customId === 'multiplayagain'){/////////////////////////////
             
-            await interaction.defereReply();
-            interaction.editReply('.').then(async res => await res.delete())
+            await interaction.deferReply();
+            //interaction.editReply('.').then(async res => await res.delete())
             
             //get the gaming object for this user
             let multiGamingObject = await MultiPlayerModel.findOne(
