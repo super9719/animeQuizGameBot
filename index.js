@@ -1711,10 +1711,13 @@ function startTimer(channelId,multiGamingObject,obj){
 
                 //update multiGaming object
                 multiGamingObject.stage = Number(multiGamingObject.stage) + 1;
+                multiGamingObject.isWritable = false;
                 multiGamingObject = await multiGamingObject.save();
 
                 //send time over message
                 await obj.channel.send('Time is over, 5sec');
+                
+                
 
                 //triger the update event
                 eventEmitter.emit('update', {
