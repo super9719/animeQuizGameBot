@@ -770,7 +770,7 @@ client.on('interactionCreate', async interaction =>{
 
                 //allow user to send a message 'his answer'
                 globalGamingRooms[interaction.channel.id].isWritebale = true
-                globalGamingRooms[msg.channel.id].sendingStage = 1
+                globalGamingRooms[interaction.channel.id].sendingStage = 1
                 multiGamingObject.isWritable = true;
                 multiGamingObject = await multiGamingObject.save();
 
@@ -1152,6 +1152,7 @@ client.on('messageCreate', async msg=>{
                                 
                                 //update key variables
                                 sendingStage += 1;
+                                globalGamingRooms[msg.channel.id].sendingStage += 1
                                 isWritebale = false;
                                 multiGamingObject.isWritable = false;
                                 multiGamingObject.hostAllowed = false;
@@ -1187,6 +1188,7 @@ client.on('messageCreate', async msg=>{
 
                             //increase sending stage by one one message received
                             sendingStage += 1
+                            globalGamingRooms[msg.channel.id].sendingStage += 1
 
                             //update key variable
                             multiGamingObject.gestAllowed = false;
@@ -1199,6 +1201,7 @@ client.on('messageCreate', async msg=>{
 
                                 //update key variables
                                 sendingStage += 1;
+                                globalGamingRooms[msg.channel.id].sendingStage += 1
                                 answered = true;
 
                                 //send success message
@@ -1225,6 +1228,7 @@ client.on('messageCreate', async msg=>{
                                 globalGamingRooms[msg.channel.id].timer = 1
 
                                 //update key variables
+                                globalGamingRooms[msg.channel.id].sendingStage += 1
                                 sendingStage += 1;
                                 isWritebale = false;
                                 multiGamingObject.isWritable = false;
