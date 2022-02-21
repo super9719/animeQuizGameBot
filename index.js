@@ -1214,7 +1214,7 @@ client.on('messageCreate', async msg=>{
                                 gestAllowed = false;
                                 answered = true;
                                 multiGamingObject.stage = `${Number(multiGamingObject.stage) + 1}`;
-                                multiGamingObject.hostScore = `${Number(multiGamingObject.gestScore) + 1}`;
+                                multiGamingObject.gestScore = `${Number(multiGamingObject.gestScore) + 1}`;
                                 multiGamingObject.answered = true;
                                 multiGamingObject = await multiGamingObject.save();
 
