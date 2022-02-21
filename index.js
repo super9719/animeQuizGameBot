@@ -1698,7 +1698,7 @@ function startTimer(channelId,multiGamingObject,obj){
     globalGamingRooms[channelId].timerInterval = setInterval(async function(){
 
         timer += 1
-        if(timer === 5){
+        if(timer === 10){
             //reset the timer
             clearInterval(globalGamingRooms[channelId].timerInterval);
             timer = 1;
@@ -1715,7 +1715,7 @@ function startTimer(channelId,multiGamingObject,obj){
                 multiGamingObject = await multiGamingObject.save();
 
                 //send time over message
-                await obj.channel.send('Time is over, 5sec');
+                await obj.channel.send('Time is over :pensive:, 10sec');
                 
                 
 
